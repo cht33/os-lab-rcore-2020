@@ -46,6 +46,7 @@ pub unsafe fn enable_serial_interrupt() {
 #[no_mangle]
 pub fn rust_trap(tf: &mut TrapFrame) {
     match tf.scause.cause() {
+        Trap::Exception(Exception::IllegalInstruction) => panic!("illegal instruction!"),
         Trap::Exception(Exception::Breakpoint) => breakpoint(&mut tf.sepc),
         Trap::Interrupt(Interrupt::SupervisorTimer) => super_timer(),
         Trap::Exception(Exception::InstructionPageFault) => page_fault(tf),
