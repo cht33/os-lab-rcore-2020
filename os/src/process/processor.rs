@@ -1,4 +1,3 @@
-use crate::context::ContextContent;
 use crate::interrupt::*;
 use crate::process::structs::*;
 use crate::process::thread_pool::ThreadPool;
@@ -104,23 +103,21 @@ impl Processor {
     pub fn yield_now(&self) {
         let inner = self.inner();
         if !inner.current.is_none() {
-            unsafe {
-                let flags = disable_and_store();
-                let tid = inner.current.as_mut().unwrap().0;
-                let thread_info = inner.pool.threads[tid]
-                    .as_mut()
-                    .expect("thread not existed when yielding");
-                //let thread_info = inner.pool.get_thread_info(tid);
-                thread_info.status = Status::Sleeping;
-                inner
-                    .current
-                    .as_mut()
-                    .unwrap()
-                    .1
-                    .switch_to(&mut *inner.idle);
+            let flags = disable_and_store();
+            let tid = inner.current.as_mut().unwrap().0;
+            let thread_info = inner.pool.threads[tid]
+                .as_mut()
+                .expect("thread not existed when yielding");
+            //let thread_info = inner.pool.get_thread_info(tid);
+            thread_info.status = Status::Sleeping;
+            inner
+                .current
+                .as_mut()
+                .unwrap()
+                .1
+                .switch_to(&mut *inner.idle);
 
-                restore(flags);
-            }
+            restore(flags);
         }
     }
 

@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use core::mem::zeroed;
 use riscv::register::sstatus;
 use riscv::register::{scause::Scause, sstatus::Sstatus};
@@ -19,7 +20,7 @@ pub struct Context {
 impl Context {
     #[naked]
     #[inline(never)]
-    pub unsafe extern "C" fn switch(&mut self, target: &mut Context) {
+    pub unsafe extern "C" fn switch(&mut self, _target: &mut Context) {
         asm!(include_str!("process/switch.asm") :::: "volatile");
     }
 
@@ -62,7 +63,7 @@ extern "C" {
 
 impl ContextContent {
     fn new_kernel_thread(entry: usize, kstack_top: usize, satp: usize) -> ContextContent {
-        let mut content = ContextContent {
+        let content = ContextContent {
             ra: __trapret as usize,
             satp,
             s: [0; 12],

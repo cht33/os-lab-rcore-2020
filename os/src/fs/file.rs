@@ -1,6 +1,6 @@
+#![allow(non_camel_case_types)]
 use alloc::sync::Arc;
 use rcore_fs::vfs::INode;
-use rcore_fs_sfs::INodeImpl;
 use crate::fs::ROOT_INODE;
 
 #[derive(Copy,Clone,Debug)]
@@ -47,9 +47,7 @@ impl File {
         if (flags & 3) > 0 {
             self.set_writable(true);
         }
-        unsafe {
-            self.inode = Some(ROOT_INODE.lookup(path).unwrap().clone());
-        }
+        self.inode = Some(ROOT_INODE.lookup(path).unwrap().clone());
         self.set_offset(0);
     }
 }

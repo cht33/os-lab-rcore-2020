@@ -90,6 +90,7 @@ pub struct PageTableImpl {
 }
 
 impl PageTableImpl {
+    // make a new empty page table
     pub fn new_bare() -> Self {
         let frame = alloc_frame().expect("alloc_frame failed!");
         let paddr = frame.start_address().as_usize();

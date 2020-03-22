@@ -2,7 +2,6 @@ global_asm!(include_str!("boot/entry64.asm"));
 global_asm!(include_str!("link_user.S"));
 
 use crate::consts::*;
-use crate::memory::{alloc_frame, dealloc_frame};
 
 #[no_mangle]
 pub extern "C" fn rust_main() -> ! {
@@ -15,9 +14,9 @@ pub extern "C" fn rust_main() -> ! {
     );
     crate::interrupt::init();
 
-    unsafe {
-        asm!("mret"::::"volatile");
-    }
+    // unsafe {
+    //     asm!("mret"::::"volatile");
+    // }
 
     crate::fs::init();
     crate::process::init();

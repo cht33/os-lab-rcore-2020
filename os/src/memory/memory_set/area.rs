@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use super::{attr::MemoryAttr, handler::MemoryHandler};
 use crate::consts::PAGE_SIZE;
 use crate::memory::paging::{PageRange, PageTableImpl};

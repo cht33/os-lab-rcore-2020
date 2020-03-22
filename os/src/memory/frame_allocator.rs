@@ -2,28 +2,32 @@ use crate::consts::MAX_PHYSICAL_PAGES;
 use spin::Mutex;
 
 pub struct SegmentTreeAllocator {
-    a: [u8; MAX_PHYSICAL_PAGES << 1],
-    m: usize,
-    n: usize,
-    offset: usize,
+    a: [u8; MAX_PHYSICAL_PAGES << 1], // root is a[1]
+    m: usize,       // m is the leftmost leaf's idx in the segment tree
+    n: usize,       // n is the size of the ppn pages
+    offset: usize,  // the offset of the ppn pages
 }
 
+// some help macro
+macro_rules! l_child { ($node:expr) => (($node) << 1) }
+macro_rules! r_child { ($node:expr) => ((($node) << 1) | 1) }
+macro_rules! parent  { ($node:expr) => (($node) >> 1) }
+
 impl SegmentTreeAllocator {
+    // init with ppn range [l, r)
     pub fn init(&mut self, l: usize, r: usize) {
-        self.offset = l - 1;
+        self.offset = l;
         self.n = r - l;
         self.m = 1;
-        while self.m < self.n + 2 {
-            self.m = self.m << 1;
-        }
-        for i in (1..(self.m << 1)) {
-            self.a[i] = 1;
-        }
-        for i in (1..self.n) {
-            self.a[self.m + i] = 0;
-        }
+        // m = 2^k, where 2^(k-1) < n <= 2^k
+        while self.m < self.n { self.m = self.m << 1; }
+        // init all the inner nodes with 1
+        for i in 1..(self.m << 1) { self.a[i] = 1; }
+        // init all the leafs with 0
+        for i in 0..self.n { self.a[self.m + i] = 0; }
+        // update the inner nodes
         for i in (1..self.m).rev() {
-            self.a[i] = self.a[i << 1] & self.a[(i << 1) | 1];
+            self.a[i] = self.a[l_child!(i)] & self.a[r_child!(i)];
         }
     }
 
@@ -33,31 +37,27 @@ impl SegmentTreeAllocator {
             panic!("physical memory depleted!");
         }
         let mut p = 1;
-        while p < self.m {
-            if self.a[p << 1] == 0 {
-                p = p << 1;
-            } else {
-                p = (p << 1) | 1;
-            }
+        while p < self.m { // find an empty node
+            if self.a[l_child!(p)] == 0 { p = l_child!(p) }
+            else { p = r_child!(p) }
         }
-        let result = p + self.offset - self.m;
-        self.a[p] = 1;
-        p >>= 1;
-        while p > 0 {
-            self.a[p] = self.a[p << 1] & self.a[(p << 1) | 1];
-            p >>= 1;
-        }
-        result
+        self.update(p, 1);
+        // p - m + offset is the idx in the range [l, r)
+        p + self.offset - self.m
     }
 
     pub fn dealloc(&mut self, n: usize) {
-        let mut p = n + self.m - self.offset;
+        let p = n + self.m - self.offset;
         assert!(self.a[p] == 1);
-        self.a[p] = 0;
-        p >>= 1;
-        while p > 0 {
-            self.a[p] = self.a[p << 1] & self.a[(p << 1) | 1];
-            p >>= 1;
+        self.update(p, 0);
+    }
+
+    #[inline(always)]
+    fn update(&mut self, mut p: usize, value: u8) {
+        self.a[p] = value;
+        while p != 1 {
+            p = parent!(p);
+            self.a[p] = self.a[l_child!(p)] & self.a[r_child!(p)];
         }
     }
 }

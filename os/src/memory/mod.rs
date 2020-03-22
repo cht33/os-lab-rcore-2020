@@ -6,7 +6,7 @@ use crate::consts::*;
 use buddy_system_allocator::LockedHeap;
 use frame_allocator::SEGMENT_TREE_ALLOCATOR as FRAME_ALLOCATOR;
 use memory_set::{attr::MemoryAttr, handler::Linear, MemorySet};
-use riscv::addr::{Frame, Page, PhysAddr, VirtAddr};
+use riscv::addr::Frame;
 use riscv::register::sstatus;
 
 pub fn init(l: usize, r: usize) {
@@ -36,6 +36,7 @@ fn init_heap() {
     }
 }
 
+#[inline(always)]
 pub fn access_pa_via_va(pa: usize) -> usize {
     pa + PHYSICAL_MEMORY_OFFSET
 }

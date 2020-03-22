@@ -4,7 +4,6 @@ use crate::consts::*;
 use crate::context::Context;
 use crate::memory::memory_set::{attr::MemoryAttr, handler::ByFrame, MemorySet};
 use alloc::boxed::Box;
-use core::str;
 use riscv::register::satp;
 use xmas_elf::{
     header,
@@ -81,7 +80,7 @@ impl Thread {
         let entry_addr = elf.header.pt2.entry_point() as usize;
         let mut vm = elf.make_memory_set();
 
-        let mut ustack_top = {
+        let ustack_top = {
             let (ustack_bottom, ustack_top) =
                 (USER_STACK_OFFSET, USER_STACK_OFFSET + USER_STACK_SIZE);
             vm.push(
@@ -106,7 +105,7 @@ impl Thread {
             thread.ofile[i] = Some(Arc::new(Mutex::new(File::default())));
         }
         Box::new(thread)
-        
+
     }
 
     // 分配文件描述符

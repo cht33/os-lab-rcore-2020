@@ -1,11 +1,12 @@
+#![allow(non_snake_case)]
 use crate::context::TrapFrame;
 use crate::memory::access_pa_via_va;
 use crate::process::tick;
-use crate::timer::{clock_set_next_event, TICKS};
+use crate::timer::{clock_set_next_event};
 use riscv::register::sie;
 use riscv::register::{
-    scause::{self, Exception, Interrupt, Trap},
-    sepc, sscratch, sstatus, stvec,
+    scause::{Exception, Interrupt, Trap},
+    sscratch, sstatus, stvec,
 };
 
 global_asm!(include_str!("trap/trap.asm"));
@@ -90,7 +91,7 @@ fn external() {
 fn try_serial() -> bool {
     match super::io::getchar_option() {
         Some(ch) => {
-            if (ch == '\r') {
+            if ch == '\r' {
                 crate::fs::stdio::STDIN.push('\n');
             } else {
                 crate::fs::stdio::STDIN.push(ch);
