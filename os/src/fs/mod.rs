@@ -11,16 +11,13 @@ use rcore_fs_sfs::SimpleFileSystem;
 lazy_static! {
     pub static ref ROOT_INODE: Arc<dyn INode> = {
         let device = {
-            // extern "C" {
-            //     fn _user_img_start();
-            //     fn _user_img_end();
-            // };
-            // let start = _user_img_start as usize;
-            // let end = _user_img_end as usize;
-            // Arc::new(unsafe { device::MemBuf::new(start, end) })
-
-            // only for test lab3
-            Arc::new(unsafe { device::MemBuf::new(0, 0) })
+            extern "C" {
+                fn _user_img_start();
+                fn _user_img_end();
+            };
+            let start = _user_img_start as usize;
+            let end = _user_img_end as usize;
+            Arc::new(unsafe { device::MemBuf::new(start, end) })
         };
         let sfs = SimpleFileSystem::open(device).expect("failed to open SFS");
         sfs.root_inode()
