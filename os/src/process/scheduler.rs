@@ -79,13 +79,10 @@ impl Scheduler for RRScheduler {
         let tid = self.current;
         if tid != 0 {
             self.threads[tid].time -= 1;
-            if self.threads[tid].time == 0 {
-                return true;
-            } else {
-                return false;
-            }
+            self.threads[tid].time == 0
+        } else {
+            true
         }
-        return true;
     }
 
     fn exit(&mut self, tid: Tid) {
