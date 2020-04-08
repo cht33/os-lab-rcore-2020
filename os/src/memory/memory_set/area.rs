@@ -25,6 +25,12 @@ impl MemoryArea {
         }
     }
 
+    pub fn clone_map_all(&self, src_pt: Arc<Mutex<PageTableImpl>>, dst_pt: Arc<Mutex<PageTableImpl>>) {
+        for page in PageRange::new(self.start, self.end) {
+            self.handler.clone_map(src_pt.clone(), dst_pt.clone(), page, &self.attr);
+        }
+    }
+
     pub fn is_overlap_with(&self, start_addr: usize, end_addr: usize) -> bool {
         let p1 = self.start / PAGE_SIZE;
         let p2 = (self.end - 1) / PAGE_SIZE + 1;

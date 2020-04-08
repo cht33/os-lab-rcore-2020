@@ -69,3 +69,7 @@ pub fn current_tid() -> usize {
 pub fn current_thread_mut() -> &'static mut Thread {
     CPU.current_thread_mut()
 }
+
+pub fn add_thread(thread: Box<Thread>) -> Tid {
+    CPU.add_thread(thread)
+}

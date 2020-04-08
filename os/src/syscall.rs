@@ -8,8 +8,9 @@ pub const SYS_WRITE: usize = 64;
 pub const SYS_EXIT: usize = 93;
 pub const SYS_READ: usize = 63;
 pub const SYS_EXEC: usize = 221;
+pub const SYS_FORK: usize = 220;
 
-pub fn syscall(id: usize, args: [usize; 3], _tf: &mut TrapFrame) -> isize {
+pub fn syscall(id: usize, args: [usize; 3], tf: &mut TrapFrame) -> isize {
     match id {
         SYS_OPEN => sys_open(args[0] as *const u8, args[1] as i32),
         SYS_CLOSE => sys_close(args[0] as i32),
@@ -20,6 +21,7 @@ pub fn syscall(id: usize, args: [usize; 3], _tf: &mut TrapFrame) -> isize {
             0
         }
         SYS_EXEC => sys_exec(args[0] as *const u8),
+        SYS_FORK => sys_fork(tf),
         _ => {
             panic!("unknown syscall id {}", id);
         }
@@ -120,4 +122,10 @@ fn sys_exec(path: *const u8) -> isize {
         process::yield_now();
     }
     return 0;
+}
+
+fn sys_fork(tf: &mut TrapFrame) -> isize {
+    let new_thread = process::current_thread_mut().fork(tf);
+    let tid = process::add_thread(new_thread);
+    tid as isize
 }

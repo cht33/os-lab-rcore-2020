@@ -51,6 +51,18 @@ impl MemorySet {
         memory_set.map_kernel_and_physical_memory();
         memory_set
     }
+
+    pub fn clone(&mut self) -> Self {
+        let mut pt = Arc::new(Mutex::new(PageTableImpl::new_bare()));
+        for area in self.areas.iter() {
+            area.clone_map_all(self.page_table.clone(), pt.clone());
+        }
+        MemorySet {
+            areas: self.areas.clone(),
+            page_table: pt,
+        }
+    }
+
     pub fn map_kernel_and_physical_memory(&mut self) {
         extern "C" {
             fn stext();
@@ -112,4 +124,6 @@ impl MemorySet {
     pub fn get_table(&self) -> Arc<Mutex<PageTableImpl>> {
         self.page_table.clone()
     }
+
+
 }

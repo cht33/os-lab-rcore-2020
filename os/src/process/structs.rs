@@ -1,10 +1,9 @@
 use super::{ExitCode, Tid};
 use crate::alloc::alloc::{alloc, dealloc, Layout};
 use crate::consts::*;
-use crate::context::Context;
+use crate::context::{ TrapFrame, Context };
 use crate::memory::memory_set::{
-    attr::MemoryAttr, handler::ByFrame, handler::ByFrameSwappingOut, handler::ByFrameWithRpa,
-    MemorySet,
+    attr::MemoryAttr, handler::ByFrame, MemorySet,
 };
 use alloc::boxed::Box;
 use riscv::register::satp;
@@ -28,6 +27,7 @@ pub enum Status {
 pub struct Thread {
     pub context: Context,
     pub kstack: KernelStack,
+    pub vm: Option<MemorySet>, // is_some only in user thread
     pub wait: Option<Tid>,
     pub ofile: [Option<Arc<Mutex<File>>>; NOFILE],
 }
@@ -46,9 +46,26 @@ impl Thread {
                 context: Context::new_kernel_thread(entry, kstack_.top(), satp::read().bits()),
                 kstack: kstack_,
                 wait: None,
+                vm: None,
                 ofile: [None; NOFILE],
             })
         }
+    }
+
+    pub fn fork(&mut self, tf: &mut TrapFrame) -> Box<Thread> {
+        if self.vm.is_none() {
+            panic!("try to fork kernel thread!");
+        }
+
+        let kstack = KernelStack::new();
+        let vm = self.vm.as_mut().unwrap().clone();
+        Box::new(Thread {
+            context: Context::new_fork(tf, kstack.top(), vm.token()),
+            kstack,
+            wait: None,
+            vm: Some(vm),
+            ofile: self.ofile.clone(),
+        })
     }
 
     pub fn get_boot_thread() -> Box<Thread> {
@@ -56,6 +73,7 @@ impl Thread {
             context: Context::null(),
             kstack: KernelStack::new_empty(),
             wait: None,
+            vm: None,
             ofile: [None; NOFILE],
         })
     }
@@ -102,6 +120,7 @@ impl Thread {
             context: Context::new_user_thread(entry_addr, ustack_top, kstack.top(), vm.token()),
             kstack: kstack,
             wait: wait_thread,
+            vm: Some(vm),
             ofile: [None; NOFILE],
         };
         for i in 0..3 {
@@ -128,6 +147,8 @@ impl Thread {
         assert!(self.ofile[fd as usize].is_some());
         self.ofile[fd as usize] = None;
     }
+
+
 }
 
 pub struct KernelStack(usize);
