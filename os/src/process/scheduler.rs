@@ -113,10 +113,10 @@ impl Default for SInfo {
 
 #[derive(Default)]
 pub struct StrideScheduler {
-    threads: Vec<SInfo>,
-    pq: Vec<Tid>,  // tid的优先队列
-    len: usize,
-    current: usize,
+    threads: Vec<SInfo>, // 每个thread的信息
+    pq: Vec<Tid>,        // tid的优先队列(序号从1开始)
+    len: usize,          // 优先队列的长度
+    current: usize,      // 正在执行的线程
 }
 
 impl StrideScheduler {
@@ -129,12 +129,13 @@ impl StrideScheduler {
     }
 }
 
+// 优先队列的几个辅助函数
 impl StrideScheduler {
     // 向下更新
     fn go_down(&mut self, mut k: usize) {
         while k*2 < self.len {
             let mut j = 2*k;
-            if j+1 < self.len && self.less(j+1, j) { j += 1; };
+            if j+1 < self.len && self.less(j + 1, j) { j += 1; };
             if self.less(k, j) { break; }
             self.pq.swap(k, j);
             k = j;
@@ -143,24 +144,19 @@ impl StrideScheduler {
 
     // 向上更新
     fn go_up(&mut self, mut k: usize) {
-        while k > 1 && self.less(k, k/2) {
-            self.pq.swap(k, k/2);
+        while k > 1 && self.less(k, k / 2) {
+            self.pq.swap(k, k / 2);
             k /= 2;
         }
     }
 
-    // 比较两个节点的
+    // 比较两个节点的stride大小
     fn less(&self, i: usize, j: usize) -> bool {
         self.threads[self.pq[i]].stride < self.threads[self.pq[j]].stride
     }
-}
 
-impl Scheduler  for StrideScheduler {
-    fn push(&mut self, tid: Tid) {
-        let tid = tid + 1;
-        if self.threads.len() <= tid {
-            self.threads.resize_with(tid + 1, SInfo::default);
-        }
+    // 插入新元素
+    fn insert(&mut self, tid: Tid) {
         if self.len == self.pq.len() {
             self.pq.push(tid);
         } else {
@@ -170,14 +166,47 @@ impl Scheduler  for StrideScheduler {
         self.len += 1;
     }
 
+    // 删除最小元素(堆顶)
+    fn del_min(&mut self) -> Tid {
+        let tid = self.pq[1];
+        self.len -= 1;
+        self.pq[1] = self.pq[self.len];
+        self.go_down(1);
+        tid
+    }
+
+    fn empty(&self) -> bool { self.len == 1 }
+
+    // 按值删除元素(即删除当前tid)
+    fn del_by_val(&mut self, tid: Tid) {
+        let mut idx = 0;
+        for i in 1..self.len {
+            if self.pq[i] == tid {
+                idx = i;
+                break;
+            }
+        }
+        if idx == 0 { return; }
+        self.len -= 1;
+        self.pq.swap(idx, self.len);
+        self.go_up(idx);
+        self.go_down(idx);
+    }
+}
+
+impl Scheduler  for StrideScheduler {
+    fn push(&mut self, tid: Tid) {
+        let tid = tid + 1;
+        if self.threads.len() <= tid {
+            self.threads.resize_with(tid + 1, SInfo::default);
+        }
+        self.insert(tid);
+    }
+
     fn pop(&mut self) -> Option<Tid> {
-        if self.len == 1 {
-            None
-        } else {
-            let tid = self.pq[1];
-            self.len -= 1;
-            self.pq[1] = self.pq[self.len];
-            self.go_down(1);
+        if self.empty() { None }
+        else {
+            let tid = self.del_min();
             self.current = tid;
             Some(tid - 1)
         }
@@ -189,9 +218,7 @@ impl Scheduler  for StrideScheduler {
         else {
             self.threads[tid].update();
             let top = self.pq[1];
-            if self.threads[tid].stride < self.threads[top].stride {
-                false
-            } else { true }
+            self.threads[tid].stride > self.threads[top].stride
         }
     }
 
@@ -199,20 +226,9 @@ impl Scheduler  for StrideScheduler {
         let tid = tid + 1;
         if self.current == tid {
             self.current = 0;
-            return;
+        } else {
+            self.del_by_val(tid);
         }
-
-        let mut idx = 0;
-        for i in 1..self.len {
-            if self.pq[i] == tid {
-                idx = i;
-                break;
-            }
-        }
-        self.len -= 1;
-        self.pq.swap(idx, self.len);
-        self.go_up(idx);
-        self.go_down(idx);
     }
 
     fn set_priority(&mut self, priority: usize, tid: Tid) {
