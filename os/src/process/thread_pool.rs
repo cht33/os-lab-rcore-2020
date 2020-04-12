@@ -66,8 +66,7 @@ impl ThreadPool {
     }
 
     pub fn tick(&mut self) -> bool {
-        let ret = self.scheduler.tick();
-        ret
+        self.scheduler.tick()
     }
 
     pub fn exit(&mut self, tid: Tid) {
@@ -81,5 +80,9 @@ impl ThreadPool {
             .expect("thread not exist when waking up");
         proc.status = Status::Ready;
         self.scheduler.push(tid);
+    }
+
+    pub fn set_priority(&mut self, priority: usize, tid: Tid) {
+        self.scheduler.set_priority(priority, tid);
     }
 }

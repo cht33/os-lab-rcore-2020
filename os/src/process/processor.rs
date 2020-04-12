@@ -44,6 +44,10 @@ impl Processor {
         self.inner().pool.add(thread)
     }
 
+    pub fn set_priority(&self, priority: usize) {
+        self.inner().pool.set_priority(priority, self.current_tid());
+    }
+
     pub fn idle_main(&self) -> ! {
         let inner = self.inner();
         disable_and_store();

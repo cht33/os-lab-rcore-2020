@@ -6,6 +6,8 @@ enum SyscallId {
     Exit = 93,
     Exec = 221,
     FORK = 220,
+    SetPriority = 140,
+    Times = 153,
 }
 
 #[inline(always)]
@@ -52,4 +54,12 @@ pub fn sys_exec(path: *const u8) {
 
 pub fn sys_fork() -> i64 {
     sys_call(SyscallId::FORK, 0, 0, 0, 0)
+}
+
+pub fn set_priority(priority: usize) {
+    sys_call(SyscallId::SetPriority, priority, 0, 0, 0);
+}
+
+pub fn sys_gettime() -> i64 {
+    sys_call(SyscallId::Times, 0, 0, 0, 0)
 }
