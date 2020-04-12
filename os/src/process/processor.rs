@@ -114,13 +114,7 @@ impl Processor {
                 .expect("thread not existed when yielding");
             //let thread_info = inner.pool.get_thread_info(tid);
             thread_info.status = Status::Sleeping;
-            inner
-                .current
-                .as_mut()
-                .unwrap()
-                .1
-                .switch_to(&mut *inner.idle);
-
+            inner.current.as_mut().unwrap().1.switch_to(&mut *inner.idle);
             restore(flags);
         }
     }
