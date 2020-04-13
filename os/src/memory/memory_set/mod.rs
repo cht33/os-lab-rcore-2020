@@ -53,7 +53,7 @@ impl MemorySet {
     }
 
     pub fn clone(&mut self) -> Self {
-        let mut pt = Arc::new(Mutex::new(PageTableImpl::new_bare()));
+        let pt = Arc::new(Mutex::new(PageTableImpl::new_bare()));
         for area in self.areas.iter() {
             area.clone_map_all(self.page_table.clone(), pt.clone());
         }
@@ -124,6 +124,4 @@ impl MemorySet {
     pub fn get_table(&self) -> Arc<Mutex<PageTableImpl>> {
         self.page_table.clone()
     }
-
-
 }

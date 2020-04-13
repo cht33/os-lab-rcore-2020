@@ -91,6 +91,7 @@ impl Scheduler for RRScheduler {
     fn set_priority(&mut self, _priority: usize, _tid: Tid) {}
 }
 
+// StrideScheduler for lab6
 const BIG_STRIDE: usize = (1 << 31) - 1;
 
 #[derive(Debug)]

@@ -1,4 +1,3 @@
-use super::super::page_replace::PAGE_REPLACE_HANDLER;
 use super::attr::MemoryAttr;
 use crate::consts::PAGE_SIZE;
 use crate::memory::access_pa_via_va;
@@ -67,7 +66,7 @@ impl MemoryHandler for Linear {
         }
     }
     fn clone_map(
-        &self, src_pt: Arc<Mutex<PageTableImpl>>,
+        &self, _src_pt: Arc<Mutex<PageTableImpl>>,
         dst_pt: Arc<Mutex<PageTableImpl>>,
         va: usize,
         attr: &MemoryAttr

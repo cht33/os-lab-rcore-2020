@@ -8,9 +8,11 @@ extern crate user;
 
 const LF: u8 = 0x0au8;
 const CR: u8 = 0x0du8;
+const BS: u8 = 0x08u8;
+const DL: u8 = 0x7fu8;
 
 use alloc::string::String;
-use user::io::getc;
+use user::io::{putchar, getc};
 use user::syscall::sys_exec;
 
 #[no_mangle]
@@ -30,6 +32,12 @@ pub fn main() {
                     line.clear();
                 }
                 print!(">> ");
+            }
+            DL => if !line.is_empty() {
+                putchar(BS as char);
+                putchar(' ');
+                putchar(BS as char);
+                line.pop();
             }
             _ => {
                 print!("{}", c as char);

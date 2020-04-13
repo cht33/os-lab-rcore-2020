@@ -1,5 +1,5 @@
 use {
-    super::{alloc_frame, paging::PageTableImpl},
+    super::paging::PageTableImpl,
     crate::{
         consts::{PAGE_SIZE, PHYSICAL_MEMORY_OFFSET},
         fs::{disk_page_read, disk_page_write},

@@ -61,14 +61,14 @@ static ALLOCATOR: Mutex<[u8; DISK_PAGES / 8]> = Mutex::new([0u8; DISK_PAGES / 8]
 fn alloc_pos() -> usize {
     let mut idx = 0usize;
     let mut allocator = ALLOCATOR.lock();
-    for mut byte in allocator.iter_mut() {
+    for byte in allocator.iter_mut() {
         if *byte | 0 == 0xFF {
             idx += 8;
             continue;
         }
         for i in 0..8 {
             if (0x80 >> i) & *byte == 0 {
-                *byte |= (0x80 >> i);
+                *byte |= 0x80 >> i;
                 idx += i;
                 return idx;
             }
