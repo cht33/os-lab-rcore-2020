@@ -104,16 +104,20 @@ impl Processor {
         Thread::get_boot_thread().switch_to(&mut self.inner().idle);
     }
 
+    pub fn park(&self) {
+        let inner = self.inner();
+        let tid = inner.current.as_mut().unwrap().0;
+        let thread_info = inner.pool.threads[tid]
+            .as_mut()
+            .expect("thread not existed when yielding");
+        thread_info.status = Status::Sleeping;
+        self.yield_now();
+    }
+
     pub fn yield_now(&self) {
         let inner = self.inner();
         if !inner.current.is_none() {
             let flags = disable_and_store();
-            let tid = inner.current.as_mut().unwrap().0;
-            let thread_info = inner.pool.threads[tid]
-                .as_mut()
-                .expect("thread not existed when yielding");
-            //let thread_info = inner.pool.get_thread_info(tid);
-            thread_info.status = Status::Sleeping;
             inner
                 .current
                 .as_mut()

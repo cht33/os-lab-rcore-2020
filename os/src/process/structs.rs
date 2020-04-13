@@ -15,6 +15,7 @@ use xmas_elf::{
 use crate::fs::file::File;
 use spin::Mutex;
 use alloc::sync::Arc;
+use alloc::collections::VecDeque;
 
 #[derive(Clone)]
 pub enum Status {
@@ -148,7 +149,14 @@ impl Thread {
         self.ofile[fd as usize] = None;
     }
 
-
+    pub fn pipe(&mut self) -> isize {
+        let reader = self.alloc_fd() as isize;
+        let writer = self.alloc_fd() as isize;
+        let pipe = Arc::new(Mutex::new(VecDeque::default()));
+        self.ofile[reader as usize].as_mut().unwrap().lock().set_pipe(true, pipe.clone());
+        self.ofile[writer as usize].as_mut().unwrap().lock().set_pipe(false, pipe);
+        (reader <<32) | writer
+    }
 }
 
 pub struct KernelStack(usize);

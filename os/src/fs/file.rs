@@ -2,12 +2,15 @@
 use alloc::sync::Arc;
 use rcore_fs::vfs::INode;
 use crate::fs::ROOT_INODE;
+use spin::Mutex;
+use alloc::collections::VecDeque;
 
 #[derive(Copy,Clone,Debug)]
 pub enum FileDescriptorType {
     FD_NONE,
     FD_INODE,
     FD_DEVICE,
+    FD_PIPE,
 }
 
 #[derive(Clone)]
@@ -17,6 +20,7 @@ pub struct File {
     writable: bool,
     pub inode: Option<Arc<dyn INode>>,
     offset: usize,
+    pipe: Option<Arc<Mutex<VecDeque<u8>>>>,
 }
 
 impl File {
@@ -27,6 +31,7 @@ impl File {
             writable: false,
             inode: None,
             offset: 0,
+            pipe: None,
         }
     }
     pub fn set_readable(&mut self, v: bool) { self.readable = v; }
@@ -49,5 +54,24 @@ impl File {
         }
         self.inode = Some(ROOT_INODE.lookup(path).unwrap().clone());
         self.set_offset(0);
+    }
+
+    pub fn set_pipe(&mut self, readable: bool, pipe: Arc<Mutex<VecDeque<u8>>>) {
+        self.set_fdtype(FileDescriptorType::FD_PIPE);
+        self.set_readable(readable);
+        self.set_writable(!readable);
+        self.pipe = Some(pipe);
+    }
+
+    pub fn pipe_pop(&mut self) -> Option<u8> {
+        self.pipe.as_mut().unwrap().lock().pop_front()
+    }
+
+    pub fn pipe_push(&mut self, c: u8) {
+        self.pipe.as_mut().unwrap().lock().push_back(c);
+    }
+
+    pub fn pipe_is_on(&self) -> bool {
+        Arc::strong_count(self.pipe.as_ref().unwrap()) > 1
     }
 }

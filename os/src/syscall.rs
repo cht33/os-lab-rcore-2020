@@ -12,6 +12,7 @@ pub const SYS_EXEC: usize = 221;
 pub const SYS_FORK: usize = 220;
 pub const SYS_SETPRIORITY: usize = 140;
 pub const SYS_TIMES: usize = 153;
+pub const SYS_PIPE: usize = 59;
 
 pub fn syscall(id: usize, args: [usize; 3], tf: &mut TrapFrame) -> isize {
     match id {
@@ -27,10 +28,15 @@ pub fn syscall(id: usize, args: [usize; 3], tf: &mut TrapFrame) -> isize {
         SYS_FORK => sys_fork(tf),
         SYS_SETPRIORITY => sys_setpriority(args[0]),
         SYS_TIMES => sys_gettime(),
+        SYS_PIPE => sys_pipe(),
         _ => {
             panic!("unknown syscall id {}", id);
         }
     }
+}
+
+fn sys_pipe() -> isize {
+    process::current_thread_mut().pipe()
 }
 
 fn sys_open(path: *const u8, flags: i32) -> isize {
@@ -78,6 +84,15 @@ unsafe fn sys_read(fd: usize, base: *mut u8, len: usize) -> isize {
                 file.set_offset(offset);
                 return s as isize;
             }
+            FileDescriptorType::FD_PIPE => {
+                if !file.pipe_is_on() { return 0; }
+                loop {
+                    if let Some(c) = file.pipe_pop() {
+                        *base = c;
+                        break 1;
+                    } else { process::yield_now() }
+                }
+            }
             _ => {
                 panic!("fdtype not handled!");
             }
@@ -108,6 +123,14 @@ unsafe fn sys_write(fd: usize, base: *const u8, len: usize) -> isize {
                 file.set_offset(offset);
                 return s as isize;
             }
+            FileDescriptorType::FD_PIPE => {
+                let p = base;
+                for _ in 0..len {
+                    file.pipe_push(*p);
+                    p.add(1);
+                }
+                return len as isize;
+            }
             _ => {
                 panic!("fdtype not handled!");
             }
@@ -124,7 +147,7 @@ pub unsafe fn from_cstr(s: *const u8) -> &'static str {
 fn sys_exec(path: *const u8) -> isize {
     let valid = process::execute(unsafe { from_cstr(path) }, Some(process::current_tid()));
     if valid {
-        process::yield_now();
+        process::park();
     }
     return 0;
 }

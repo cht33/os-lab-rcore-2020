@@ -8,6 +8,7 @@ enum SyscallId {
     FORK = 220,
     SetPriority = 140,
     Times = 153,
+    Pipe = 59,
 }
 
 #[inline(always)]
@@ -26,6 +27,12 @@ fn sys_call(syscall_id: SyscallId, arg0: usize, arg1: usize, arg2: usize, arg3: 
     ret
 }
 
+pub fn sys_pipe(pipefd: &mut [i32; 2]) -> i64 {
+    let t = sys_call(SyscallId::Pipe, 0, 0, 0, 0);
+    pipefd[0] = (t >> 32) as i32;
+    pipefd[1] = (t & 0xffffffff) as i32;
+    0
+}
 
 pub fn sys_open(path: *const u8, flags: i32) -> i64 {
     sys_call(SyscallId::Open, path as usize, flags as usize, 0, 0)

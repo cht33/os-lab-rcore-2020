@@ -29,7 +29,7 @@ try:
         with open('os/src/process/mod.rs', 'w') as f:
             f.write(s)
         # try test
-        c = os.system('make clean')
+        # c = os.system('make clean')
         c = os.system('make run > ' + sys.argv[1] + '.result')
         if c == 0:
             print('test successfully')

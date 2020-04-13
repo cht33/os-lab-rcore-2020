@@ -55,6 +55,10 @@ pub fn exit(code: usize) {
     CPU.exit(code);
 }
 
+pub fn park() {
+    CPU.park()
+}
+
 pub fn yield_now() {
     CPU.yield_now();
 }
