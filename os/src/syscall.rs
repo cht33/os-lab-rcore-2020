@@ -85,7 +85,7 @@ unsafe fn sys_read(fd: usize, base: *mut u8, len: usize) -> isize {
                 return s as isize;
             }
             FileDescriptorType::FD_PIPE => {
-                if !file.pipe_is_on() { return 0; }
+                if !file.pipe_is_on() && file.pipe_is_empty() { return 0; }
                 loop {
                     if let Some(c) = file.pipe_pop() {
                         *base = c;
@@ -124,6 +124,7 @@ unsafe fn sys_write(fd: usize, base: *const u8, len: usize) -> isize {
                 return s as isize;
             }
             FileDescriptorType::FD_PIPE => {
+                if !file.pipe_is_on() { return 0; }
                 let p = base;
                 for _ in 0..len {
                     file.pipe_push(*p);

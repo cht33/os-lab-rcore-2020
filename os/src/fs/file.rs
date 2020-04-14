@@ -74,4 +74,8 @@ impl File {
     pub fn pipe_is_on(&self) -> bool {
         Arc::strong_count(self.pipe.as_ref().unwrap()) > 1
     }
+
+    pub fn pipe_is_empty(&self) -> bool {
+        self.pipe.as_ref().unwrap().lock().is_empty()
+    }
 }
